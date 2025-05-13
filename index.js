@@ -29,9 +29,9 @@ app.get('/api/paquets/:id/cartes', async (req, res) => {
   const id = req.params.id;
   try {
     const result = await pool.query(
-      `SELECT c.* FROM paquet_cartes pc 
-       JOIN cartes c ON c.id = pc.id_carte 
-       WHERE pc.id_paquet = $1`, [id]);
+      'SELECT * FROM cartes WHERE id_paquet = $1',
+      [id]
+    );
     res.status(200).json(result.rows);
   } catch (err) {
     res.status(500).json({ erreur: `Erreur lors de la récupération des cartes du paquet ${id}`, details: err.message });
@@ -56,7 +56,6 @@ app.post('/api/paquets', async (req, res) => {
 app.delete('/api/paquets/:id', async (req, res) => {
   const id = req.params.id;
   try {
-    await pool.query('DELETE FROM paquet_cartes WHERE id_paquet = $1', [id]);
     const result = await pool.query('DELETE FROM paquet WHERE id = $1 RETURNING *', [id]);
     if (result.rowCount === 0) {
       return res.status(404).json({ erreur: `Aucun paquet trouvé avec l'id ${id}` });
@@ -72,20 +71,15 @@ app.post('/api/cartes', async (req, res) => {
   const { nom, imageURL, id_paquet } = req.body;
   if (!nom) return res.status(400).json({ erreur: "Le champ 'nom' est requis." });
   try {
-    const carteResult = await pool.query(
-      'INSERT INTO cartes (nom, imageURL) VALUES ($1, $2) RETURNING *',
-      [nom, imageURL]);
-    const carte = carteResult.rows[0];
-
-    if (id_paquet) {
-      await pool.query('INSERT INTO paquet_cartes (id_paquet, id_carte) VALUES ($1, $2)', [id_paquet, carte.id]);
-    }
-
-    res.status(201).json(carte);
+    const result = await pool.query(
+      'INSERT INTO cartes (nom, imageURL, id_paquet) VALUES ($1, $2, $3) RETURNING *',
+      [nom, imageURL, id_paquet]);
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ erreur: 'Erreur lors de l’ajout de la carte', details: err.message });
   }
 });
+
 
 // Supprimer une carte
 app.delete('/api/cartes/:id', async (req, res) => {
