@@ -85,7 +85,6 @@ app.post('/api/cartes', async (req, res) => {
 app.delete('/api/cartes/:id', async (req, res) => {
   const id = req.params.id;
   try {
-    await pool.query('DELETE FROM paquet_cartes WHERE id_carte = $1', [id]);
     const result = await pool.query('DELETE FROM cartes WHERE id = $1 RETURNING *', [id]);
     if (result.rowCount === 0) {
       return res.status(404).json({ erreur: `Aucune carte trouvée avec l'id ${id}` });
